@@ -137,6 +137,11 @@
                         <span>Total:</span>
                         <span id="cart-total">$0.00 USD</span>
                     </div>
+                    <!-- Company Name Input -->
+                    <div class="mb-4">
+                        <label for="company-name" class="block text-sm font-medium text-slate-700 mb-1">Company Name (Required)</label>
+                        <input type="text" id="company-name" name="company-name" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your company name">
+                    </div>
                     <div class="flex gap-2">
                         <button id="export-pdf" class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition disabled:opacity-50" disabled>Export PDF</button>
                         <button id="export-excel" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition disabled:opacity-50" disabled>Export Excel</button>
@@ -217,6 +222,7 @@
         const exportExcelBtn = document.getElementById('export-excel');
         const toastEl = document.getElementById('toast');
         const exchangeRateDisplay = document.getElementById('exchange-rate-display');
+        const companyNameInput = document.getElementById('company-name');
 
         let catalogData = {};
         let orderedBrands = [];
@@ -513,13 +519,23 @@
         }
 
         /**
+         * Checks conditions and enables/disables export buttons.
+         */
+        function updateExportButtonState() {
+            const cartHasItems = Object.keys(cart).length > 0;
+            const companyNameIsEntered = companyNameInput.value.trim() !== '';
+            const canExport = cartHasItems && companyNameIsEntered;
+
+            exportPdfBtn.disabled = !canExport;
+            exportExcelBtn.disabled = !canExport;
+        }
+
+        /**
          * Renders the cart UI based on the local cart state.
          */
         function renderCart() {
             if (Object.keys(cart).length === 0) {
                 cartItemsContainer.innerHTML = `<p class="text-slate-500 text-center mt-8">Your cart is empty.</p>`;
-                exportPdfBtn.disabled = true;
-                exportExcelBtn.disabled = true;
             } else {
                 cartItemsContainer.innerHTML = '';
                 Object.entries(cart).forEach(([id, item]) => {
@@ -537,8 +553,6 @@
                     `;
                     cartItemsContainer.appendChild(itemEl);
                 });
-                exportPdfBtn.disabled = false;
-                exportExcelBtn.disabled = false;
             }
 
             // Add event listeners for quantity changes and removal
@@ -553,6 +567,7 @@
             });
 
             updateCartSummary();
+            updateExportButtonState();
         }
 
         /**
@@ -588,6 +603,9 @@
          * Exports the cart to a PDF file.
          */
         function handleExportPdf() {
+            const companyName = companyNameInput.value.trim();
+            if (!companyName) return;
+
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
@@ -595,7 +613,8 @@
             doc.text("Order Summary", 14, 22);
             doc.setFontSize(11);
             doc.setTextColor(100);
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 30);
+            doc.text(`Company: ${companyName}`, 14, 30);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 36);
 
             const headers = [["Product Name", "Quantity", "Unit Price (USD)", "Total (USD)"]];
             const data = Object.values(cart).map(item => [
@@ -606,7 +625,7 @@
             ]);
 
             doc.autoTable({
-                startY: 40,
+                startY: 42,
                 head: headers,
                 body: data,
                 theme: 'striped',
@@ -618,14 +637,20 @@
             doc.setFontSize(14);
             doc.text(`Grand Total: $${total.toFixed(2)} USD`, 14, finalY + 15);
 
-            doc.save("cart_summary_usd.pdf");
+            doc.save(`cart_summary_${companyName}.pdf`);
         }
 
         /**
          * Exports the cart to an Excel (XLSX) file.
          */
         function handleExportExcel() {
+            const companyName = companyNameInput.value.trim();
+            if (!companyName) return;
+
             const worksheetData = [
+                ["Company:", companyName],
+                ["Date:", new Date().toLocaleDateString()],
+                [], // Spacer row
                 ["Product Name", "Quantity", "Unit Price (USD)", "Total (USD)"]
             ];
             
@@ -647,7 +672,7 @@
             const ws = XLSX.utils.aoa_to_sheet(worksheetData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Cart");
-            XLSX.writeFile(wb, "cart_summary_usd.xlsx");
+            XLSX.writeFile(wb, `cart_summary_${companyName}.xlsx`);
         }
 
         /**
@@ -709,6 +734,7 @@
         closeCartButton.addEventListener('click', toggleCart);
         exportPdfBtn.addEventListener('click', handleExportPdf);
         exportExcelBtn.addEventListener('click', handleExportExcel);
+        companyNameInput.addEventListener('input', updateExportButtonState);
         document.addEventListener('DOMContentLoaded', initCatalogApp);
 
     </script>
