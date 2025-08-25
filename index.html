@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Price Catalog (USD)</title>
     
     <!-- Tailwind CSS for styling -->
@@ -73,22 +72,35 @@
 
     <!-- Header Section -->
     <header class="bg-slate-800 shadow-lg sticky top-0 z-20">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4 sm:gap-6">
-                <img src="https://i.ibb.co/7d57gNYf/Clean_Shot-14-08-2025-at-2-11-43-2x.png" alt="Company Logo" class="h-12 w-auto">
-                <div class="text-left">
-                    <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-                        Digital Price Catalog
-                    </h1>
-                     <p id="exchange-rate-display" class="text-slate-400 mt-1 text-xs">Loading exchange rate...</p>
+        <div class="container mx-auto px-4 sm:px-6 py-3">
+            <div class="flex justify-between items-center">
+                <!-- Left Side: Main Logo and Title -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <img src="https://i.ibb.co/7d57gNYf/Clean_Shot-14-08-2025-at-2-11-43-2x.png" alt="Company Logo" class="h-10 sm:h-12 w-auto flex-shrink-0">
+                    <div>
+                        <h1 class="text-lg sm:text-xl md:text-3xl font-extrabold text-white tracking-tight">
+                            Digital Price Catalog
+                        </h1>
+                         <p class="text-xs text-slate-300 hidden sm:block">Leading Turkish FMCG Distributors & Exporters</p>
+                    </div>
+                </div>
+                
+                <!-- Right Side: Partner Logos and Cart -->
+                <div class="flex items-center flex-shrink-0 gap-2 sm:gap-4">
+                    <div class="flex flex-col gap-1">
+                        <img src="https://i.ibb.co/vCG3hRL8/onlinefmcglogo.png" alt="Partner Logo 1" class="h-5 sm:h-6 w-auto object-contain">
+                        <img src="https://i.ibb.co/ccB5q02K/cropped-Whats-App-Image-2025-07-28-at-9-57-22-PM.jpg" alt="Partner Logo 2" class="h-5 sm:h-6 w-auto object-contain">
+                    </div>
+                    <button id="view-cart-button" class="relative bg-indigo-600 text-white p-2 rounded-lg shadow hover:bg-indigo-700 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span id="cart-item-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    </button>
                 </div>
             </div>
-            <button id="view-cart-button" class="relative bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span id="cart-item-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-            </button>
+            <!-- Tagline for mobile view -->
+            <p class="text-xs text-slate-300 sm:hidden mt-1">Leading Turkish FMCG Distributors & Exporters</p>
         </div>
     </header>
 
@@ -135,12 +147,11 @@
                 <div class="border-t pt-4 mt-4">
                     <div class="flex justify-between items-center font-bold text-lg mb-4">
                         <span>Total:</span>
-                        <span id="cart-total">$0.00 USD</span>
+                        <span id="cart-total">0.00 $</span>
                     </div>
-                    <!-- Company Name Input -->
                     <div class="mb-4">
-                        <label for="company-name" class="block text-sm font-medium text-slate-700 mb-1">Company Name (Required)</label>
-                        <input type="text" id="company-name" name="company-name" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your company name">
+                        <label for="company-name" class="block text-sm font-medium text-slate-700 mb-1">Company Name *</label>
+                        <input type="text" id="company-name" name="company-name" class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your company name" required>
                     </div>
                     <div class="flex gap-2">
                         <button id="export-pdf" class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition disabled:opacity-50" disabled>Export PDF</button>
@@ -169,18 +180,8 @@
         import { getFirestore, doc, setDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
+        // IMPORTANT: Replace this URL with the link to your Google Sheet for USD prices.
         const googleSheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTemIQAjyMsEqPPUYaNMIn2rwrEbuqR7NrW9vey_mC1iZmIn7FZlOH7g3Co7bZG5B18BJy7Cjldvs53/pub?gid=0&single=true&output=csv';
-        const currencyApiUrl = 'https://api.exchangerate-api.com/v4/latest/USD';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjl2QFyRWoN_SjbRKTuhxp9ksgm-5MBTw",
-            authDomain: "comogluimg.firebaseapp.com",
-            projectId: "comogluimg",
-            storageBucket: "comogluimg.appspot.com",
-            messagingSenderId: "964383861519",
-            appId: "1:964383861519:web:447d607e3c158df951ec7a",
-            measurementId: "G-NK80JQBKXE"
-        };
 
         const brandLogoMap = {
             "BEŞLER": "https://res.cloudinary.com/dnc3itu1c/image/upload/l1.jpg",
@@ -221,71 +222,68 @@
         const exportPdfBtn = document.getElementById('export-pdf');
         const exportExcelBtn = document.getElementById('export-excel');
         const toastEl = document.getElementById('toast');
-        const exchangeRateDisplay = document.getElementById('exchange-rate-display');
         const companyNameInput = document.getElementById('company-name');
 
         let catalogData = {};
         let orderedBrands = [];
         let cart = {}; // Local cart state
         let currentBrand = null; // To track the currently displayed brand
-        let exchangeRateUSDtoTRY = 32.5; // Fallback rate
         
         // --- Firebase ---
         let db, auth, userId;
         let cartDocRef;
         let unsubscribeCart; // To detach listener on sign-out
 
-        /**
-         * Fetches the latest USD to TRY exchange rate.
-         */
-        async function getExchangeRate() {
-            try {
-                const response = await fetch(currencyApiUrl);
-                if (!response.ok) throw new Error('Failed to fetch exchange rate');
-                const data = await response.json();
-                if (data && data.rates && data.rates.TRY) {
-                    exchangeRateUSDtoTRY = data.rates.TRY;
-                    exchangeRateDisplay.textContent = `1 USD = ${exchangeRateUSDtoTRY.toFixed(2)} TRY`;
-                } else {
-                     throw new Error('Invalid API response for exchange rate');
-                }
-            } catch (error) {
-                console.error(error);
-                exchangeRateDisplay.textContent = `Using fallback rate: 1 USD = ${exchangeRateUSDtoTRY.toFixed(2)} TRY`;
-            }
-        }
+        // Hardcoded Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjl2QFyRWoN_SjbRKTuhxp9ksgm-5MBTw",
+            authDomain: "comogluimg.firebaseapp.com",
+            projectId: "comogluimg",
+            storageBucket: "comogluimg.appspot.com",
+            messagingSenderId: "964383861519",
+            appId: "1:964383861519:web:447d607e3c158df951ec7a",
+            measurementId: "G-NK80JQBKXE"
+        };
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'digital-price-catalog-usd';
+
 
         /**
          * Initializes Firebase and sets up authentication.
          */
         async function initializeFirebase() {
-            if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config is not available.");
-                throw new Error("Firebase config is not available.");
+            if (!firebaseConfig.apiKey) {
+                console.error("Firebase config is not available. Please update it with your actual Firebase project credentials.");
+                return;
             }
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            setLogLevel('debug');
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
 
-            onAuthStateChanged(auth, user => {
-                if (user) {
-                    console.log("User is signed in:", user.uid);
-                    userId = user.uid;
-                    const cartPath = `/artifacts/${firebaseConfig.projectId}/users/${userId}/cart/data`;
-                    cartDocRef = doc(db, cartPath);
-                    listenToCartChanges();
-                } else {
-                    console.log("User is signed out.");
-                    if (unsubscribeCart) unsubscribeCart();
-                    userId = null;
-                    cart = {};
-                    renderCart();
-                }
-            });
+                // onAuthStateChanged is the recommended way to manage user sessions.
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // User is signed in.
+                        console.log("User is signed in:", user.uid);
+                        userId = user.uid;
+                        const cartPath = `/artifacts/${appId}/users/${userId}/cart/data`;
+                        cartDocRef = doc(db, cartPath);
+                        listenToCartChanges();
+                    } else {
+                        // User is not signed in. Attempt to sign in anonymously.
+                        console.log("No user found, attempting anonymous sign-in...");
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (signInError) {
+                            console.error("Firebase anonymous sign-in failed:", signInError);
+                        }
+                    }
+                });
 
-            if (!auth.currentUser) {
-                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
             }
         }
         
@@ -299,6 +297,7 @@
             unsubscribeCart = onSnapshot(cartDocRef, (doc) => {
                 cart = doc.exists() ? doc.data().items || {} : {};
                 renderCart();
+                // Refresh the product grid if a brand is currently displayed
                 if (currentBrand) {
                     displayProducts(currentBrand);
                 }
@@ -325,15 +324,20 @@
         function parseCsvData(csvText) {
             const data = {};
             const seenBrands = new Set();
-            const rows = csvText.trim().split('\n').filter(row => row.trim() !== '');
-            const headers = rows[0].split(',').map(h => h.trim());
+            const rows = csvText.trim().replace(/\r/g, '').split('\n').filter(row => row.trim() !== '');
             
-            const brandIndex = headers.indexOf('Brand');
-            const nameIndex = headers.indexOf('Name');
-            const priceIndex = headers.indexOf('Price');
-            const codeIndex = headers.indexOf('ProductCode');
-            const imageIndex = headers.indexOf('ImageURL');
-            const idIndex = headers.indexOf('ID');
+            const headers = rows[0].replace(/\uFEFF/g, '').split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
+            const lowerCaseHeaders = headers.map(h => h.toLowerCase());
+
+            const brandIndex = lowerCaseHeaders.indexOf('brand');
+            const nameIndex = lowerCaseHeaders.indexOf('name');
+            const priceIndex = lowerCaseHeaders.indexOf('price');
+            const codeIndex = lowerCaseHeaders.indexOf('productcode');
+            const imageIndex = lowerCaseHeaders.indexOf('imageurl');
+            const idIndex = lowerCaseHeaders.indexOf('id');
+            const koliIciAdetIndex = lowerCaseHeaders.findIndex(h => h.includes('koli ici fiyat') || h.includes('koli i̇çi̇ adet') || h.includes('pieces per case'));
+            const koliFiyatIndex = lowerCaseHeaders.indexOf('koli fiyat');
 
             for (let i = 1; i < rows.length; i++) {
                 const rowText = rows[i].trim();
@@ -342,7 +346,9 @@
                 const values = rowText.split(',').map(v => v.trim());
                 const brand = values[brandIndex] ? values[brandIndex].trim() : null;
 
-                if (!brand || brand.toLowerCase() === 'brand') continue;
+                if (!brand || brand.toLowerCase() === 'brand' || brand === 'Koli Fiyat') {
+                    continue;
+                }
 
                 if (!data[brand]) {
                     data[brand] = [];
@@ -353,13 +359,22 @@
                     seenBrands.add(brand);
                 }
 
-                data[brand].push({
+                let imageUrl = values[imageIndex] || null;
+                if (imageUrl && imageUrl.startsWith('https//')) {
+                    imageUrl = 'https://' + imageUrl.substring(8);
+                }
+                
+                const productData = {
                     id: values[idIndex] || `prod-${Date.now()}-${i}`,
                     productCode: values[codeIndex] || 'N/A',
                     name: values[nameIndex] || 'Unnamed Product',
-                    priceTRY: parseFloat(values[priceIndex]) || 0, // Price from sheet is in TRY
-                    imageUrl: values[imageIndex] || null
-                });
+                    price: parseFloat(values[priceIndex]) || 0,
+                    imageUrl: imageUrl,
+                    koliIciAdet: parseInt(values[koliIciAdetIndex], 10) || 0,
+                    koliFiyat: parseFloat(values[koliFiyatIndex]) || 0
+                };
+                
+                data[brand].push(productData);
             }
             return data;
         }
@@ -368,8 +383,9 @@
          * Renders the product grid for a selected brand.
          */
         function displayProducts(brand) {
-            currentBrand = brand;
+            currentBrand = brand; // Set the current brand
             if (!catalogData[brand] || catalogData[brand].length === 0) {
+                console.warn(`Brand "${brand}" not found or has no products.`);
                 productGrid.innerHTML = `<p class="text-center col-span-full">No products found for this brand.</p>`;
                 return;
             }
@@ -402,7 +418,6 @@
                 const placeholderUrl = `https://placehold.co/400x400/EEE/31343C?text=${encodeURIComponent(product.name.split(' ')[0])}`;
                 const imageUrl = product.imageUrl || placeholderUrl;
                 const quantity = cart[product.id]?.quantity || 0;
-                const priceInUSD = product.priceTRY / exchangeRateUSDtoTRY;
 
                 let quantityControlsHTML;
                 if (quantity === 0) {
@@ -417,6 +432,42 @@
                     `;
                 }
 
+                let pricingAndControlsHTML;
+                if (product.koliFiyat > 0) {
+                    // Layout WITH Koli Fiyat
+                    pricingAndControlsHTML = `
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-xl font-extrabold text-slate-900">$${product.price.toFixed(2)}</p>
+                                    <p class="text-sm text-slate-500">/ piece</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-extrabold text-indigo-600">$${product.koliFiyat.toFixed(2)}</p>
+                                    <p class="text-sm text-slate-500">/ Case Price (${product.koliIciAdet > 0 ? product.koliIciAdet + ' pcs' : ''})</p>
+                                </div>
+                            </div>
+                            <div class="quantity-control-container">
+                                ${quantityControlsHTML}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Layout WITHOUT Koli Fiyat
+                    pricingAndControlsHTML = `
+                        <div class="space-y-4">
+                             <p class="text-xl font-extrabold text-slate-900">
+                                $${product.price.toFixed(2)} 
+                                <span class="text-sm text-slate-500 font-medium align-baseline">/ piece</span>
+                            </p>
+                            <div class="quantity-control-container">
+                                 ${quantityControlsHTML}
+                            </div>
+                        </div>
+                    `;
+                }
+
+
                 card.innerHTML = `
                     <div class="relative h-56">
                         <img 
@@ -428,20 +479,12 @@
                         />
                     </div>
                     <div class="p-5 flex flex-col flex-grow">
-                        <div class="flex-grow mb-4">
+                        <div class="flex-grow">
                             <h3 class="text-lg font-bold text-slate-800 mb-2">${product.name}</h3>
                         </div>
-                        <div class="flex justify-between items-center mt-auto">
-                            <div class="flex-1">
-                                <p class="text-2xl font-extrabold text-slate-900">
-                                    $${priceInUSD.toFixed(2)}
-                                    <span class="text-base font-medium text-slate-500">USD</span>
-                                </p>
-                                <p class="text-xs font-normal text-slate-400 -mt-1">per piece</p>
-                            </div>
-                            <div class="quantity-control-container">
-                                ${quantityControlsHTML}
-                            </div>
+                        
+                        <div class="mt-4 pt-4 border-t">
+                           ${pricingAndControlsHTML}
                         </div>
                     </div>
                 `;
@@ -476,14 +519,14 @@
 
         /**
          * Adds a product to the cart or increments its quantity.
+         * Stores both piece price and koli fiyat to be used later.
          */
         function addToCart(product) {
-            const { id, name, priceTRY } = product;
-            const priceUSD = priceTRY / exchangeRateUSDtoTRY;
+            const { id, name, price, koliFiyat } = product;
             if (cart[id]) {
                 cart[id].quantity++;
             } else {
-                cart[id] = { name, priceUSD, quantity: 1 };
+                cart[id] = { name, price, koliFiyat, quantity: 1 };
                 showToast();
             }
             saveCartToFirestore();
@@ -519,12 +562,12 @@
         }
 
         /**
-         * Checks conditions and enables/disables export buttons.
+         * Checks if export buttons should be enabled or disabled.
          */
         function updateExportButtonState() {
-            const cartHasItems = Object.keys(cart).length > 0;
-            const companyNameIsEntered = companyNameInput.value.trim() !== '';
-            const canExport = cartHasItems && companyNameIsEntered;
+            const companyName = companyNameInput.value.trim();
+            const isCartEmpty = Object.keys(cart).length === 0;
+            const canExport = !isCartEmpty && companyName !== '';
 
             exportPdfBtn.disabled = !canExport;
             exportExcelBtn.disabled = !canExport;
@@ -532,6 +575,7 @@
 
         /**
          * Renders the cart UI based on the local cart state.
+         * Displays Koli Fiyat if available, otherwise piece price.
          */
         function renderCart() {
             if (Object.keys(cart).length === 0) {
@@ -541,10 +585,13 @@
                 Object.entries(cart).forEach(([id, item]) => {
                     const itemEl = document.createElement('div');
                     itemEl.className = 'flex justify-between items-center mb-4';
+
+                    const priceToShow = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
+                    
                     itemEl.innerHTML = `
                         <div class="flex-grow">
                             <p class="font-semibold">${item.name}</p>
-                            <p class="text-sm text-slate-500">$${item.priceUSD.toFixed(2)} USD</p>
+                            <p class="text-sm text-slate-500">$${priceToShow.toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <input type="number" min="1" value="${item.quantity}" data-id="${id}" class="quantity-input w-16 border rounded-md p-1 text-center">
@@ -572,12 +619,16 @@
 
         /**
          * Updates the cart total and item count bubble.
+         * Calculates total based on Koli Fiyat if available.
          */
         function updateCartSummary() {
-            const total = Object.values(cart).reduce((sum, item) => sum + (item.priceUSD * item.quantity), 0);
+            const total = Object.values(cart).reduce((sum, item) => {
+                const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
+                return sum + (priceToUse * item.quantity);
+            }, 0);
             const itemCount = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
             
-            cartTotalEl.textContent = `$${total.toFixed(2)} USD`;
+            cartTotalEl.textContent = `$${total.toFixed(2)}`;
             cartItemCountEl.textContent = itemCount;
             cartItemCountEl.classList.toggle('hidden', itemCount === 0);
         }
@@ -604,8 +655,6 @@
          */
         function handleExportPdf() {
             const companyName = companyNameInput.value.trim();
-            if (!companyName) return;
-
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
@@ -614,18 +663,21 @@
             doc.setFontSize(11);
             doc.setTextColor(100);
             doc.text(`Company: ${companyName}`, 14, 30);
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 36);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 38);
 
-            const headers = [["Product Name", "Quantity", "Unit Price (USD)", "Total (USD)"]];
-            const data = Object.values(cart).map(item => [
-                item.name,
-                item.quantity,
-                item.priceUSD.toFixed(2),
-                (item.priceUSD * item.quantity).toFixed(2)
-            ]);
+            const headers = [["Product Name", "Quantity", "Unit Price ($)", "Total ($)"]];
+            const data = Object.values(cart).map(item => {
+                const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
+                return [
+                    item.name,
+                    item.quantity,
+                    priceToUse.toFixed(2),
+                    (priceToUse * item.quantity).toFixed(2)
+                ]
+            });
 
             doc.autoTable({
-                startY: 42,
+                startY: 50,
                 head: headers,
                 body: data,
                 theme: 'striped',
@@ -633,11 +685,14 @@
             });
 
             const finalY = doc.autoTable.previous.finalY;
-            const total = Object.values(cart).reduce((sum, item) => sum + item.priceUSD * item.quantity, 0);
+            const total = Object.values(cart).reduce((sum, item) => {
+                const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
+                return sum + (priceToUse * item.quantity);
+            }, 0);
             doc.setFontSize(14);
-            doc.text(`Grand Total: $${total.toFixed(2)} USD`, 14, finalY + 15);
+            doc.text(`Grand Total: $${total.toFixed(2)}`, 14, finalY + 15);
 
-            doc.save(`cart_summary_${companyName}.pdf`);
+            doc.save(`order_${companyName.replace(/\s+/g, '_')}.pdf`);
         }
 
         /**
@@ -645,23 +700,21 @@
          */
         function handleExportExcel() {
             const companyName = companyNameInput.value.trim();
-            if (!companyName) return;
-
             const worksheetData = [
-                ["Company:", companyName],
-                ["Date:", new Date().toLocaleDateString()],
+                ["Company Name:", companyName],
                 [], // Spacer row
-                ["Product Name", "Quantity", "Unit Price (USD)", "Total (USD)"]
+                ["Product Name", "Quantity", "Unit Price ($)", "Total ($)"]
             ];
             
             let total = 0;
             Object.values(cart).forEach(item => {
-                const itemTotal = item.priceUSD * item.quantity;
+                const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
+                const itemTotal = priceToUse * item.quantity;
                 total += itemTotal;
                 worksheetData.push([
                     item.name,
                     item.quantity,
-                    item.priceUSD,
+                    priceToUse,
                     itemTotal
                 ]);
             });
@@ -672,17 +725,15 @@
             const ws = XLSX.utils.aoa_to_sheet(worksheetData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Cart");
-            XLSX.writeFile(wb, `cart_summary_${companyName}.xlsx`);
+            XLSX.writeFile(wb, `order_${companyName.replace(/\s+/g, '_')}.xlsx`);
         }
 
         /**
          * Initializes the application.
          */
         async function initCatalogApp() {
+            await initializeFirebase();
             try {
-                await initializeFirebase();
-                await getExchangeRate();
-                
                 const response = await fetch(googleSheetCsvUrl);
                 if (!response.ok) {
                     throw new Error(`Network response was not ok (status: ${response.status}). Check if the sheet is published correctly.`);
@@ -717,15 +768,11 @@
 
             } catch (error) {
                 console.error('Failed to initialize app:', error);
-                brandTitleContainer.innerHTML = `<h2 class="text-3xl font-bold text-red-600">Error Initializing App</h2>`;
-                let errorMessage = `<p>${error.message}</p>`;
-                if (error.code === 'auth/configuration-not-found') {
-                    errorMessage = `<p class="font-bold">Could not sign in to save your cart.</p>
-                                  <p>Please make sure "Anonymous" sign-in is enabled in your Firebase project's Authentication settings.</p>`;
-                }
+                brandTitleContainer.innerHTML = `<h2 class="text-3xl font-bold text-red-600">Error Loading Products</h2>`;
                 productGrid.innerHTML = `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 col-span-full rounded-r-lg" role="alert">
-                                            ${errorMessage}
-                                         </div>`;
+                                                 <p class="font-bold">Failed to load data</p>
+                                                 <p>${error.message}</p>
+                                               </div>`;
             }
         }
         
