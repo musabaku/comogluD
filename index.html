@@ -163,8 +163,7 @@
                         <input type="text" id="company-name" name="company-name" class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your company name" required>
                     </div>
                     <div class="flex gap-2">
-                        <button id="export-pdf" class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition disabled:opacity-50" disabled>Export PDF</button>
-                        <button id="export-excel" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition disabled:opacity-50" disabled>Export Excel</button>
+                         <button id="submit-order-btn" class="w-full btn-primary py-2 px-4 rounded-lg transition disabled:opacity-50" disabled>Submit & Export Order</button>
                     </div>
                 </div>
             </aside>
@@ -186,7 +185,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, setLogLevel, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
         // IMPORTANT: Replace this URL with the link to your Google Sheet for USD prices.
@@ -228,8 +227,7 @@
         const cartItemsContainer = document.getElementById('cart-items');
         const cartTotalEl = document.getElementById('cart-total');
         const cartItemCountEl = document.getElementById('cart-item-count');
-        const exportPdfBtn = document.getElementById('export-pdf');
-        const exportExcelBtn = document.getElementById('export-excel');
+        const submitOrderBtn = document.getElementById('submit-order-btn');
         const toastEl = document.getElementById('toast');
         const companyNameInput = document.getElementById('company-name');
 
@@ -536,7 +534,7 @@
                 cart[id].quantity++;
             } else {
                 cart[id] = { name, price, koliFiyat, quantity: 1 };
-                showToast();
+                showToast("Item added to cart!");
             }
             saveCartToFirestore();
         }
@@ -573,13 +571,12 @@
         /**
          * Checks if export buttons should be enabled or disabled.
          */
-        function updateExportButtonState() {
+        function updateSubmitButtonState() {
             const companyName = companyNameInput.value.trim();
             const isCartEmpty = Object.keys(cart).length === 0;
-            const canExport = !isCartEmpty && companyName !== '';
+            const canSubmit = !isCartEmpty && companyName !== '';
 
-            exportPdfBtn.disabled = !canExport;
-            exportExcelBtn.disabled = !canExport;
+            submitOrderBtn.disabled = !canSubmit;
         }
 
         /**
@@ -623,7 +620,7 @@
             });
 
             updateCartSummary();
-            updateExportButtonState();
+            updateSubmitButtonState();
         }
 
         /**
@@ -645,7 +642,8 @@
         /**
          * Shows a short-lived toast notification.
          */
-        function showToast() {
+        function showToast(message) {
+            toastEl.textContent = message;
             toastEl.classList.remove('opacity-0', 'translate-y-3');
             setTimeout(() => {
                 toastEl.classList.add('opacity-0', 'translate-y-3');
@@ -738,6 +736,52 @@
         }
 
         /**
+         * Handles the entire order submission process.
+         */
+        async function handleSubmitOrder() {
+            const companyName = companyNameInput.value.trim();
+            if (!companyName) {
+                showToast("Please enter a company name.");
+                return;
+            }
+            
+            const total = Object.values(cart).reduce((sum, item) => {
+                const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
+                return sum + (priceToUse * item.quantity);
+            }, 0);
+
+            const orderData = {
+                companyName: companyName,
+                cart: cart,
+                total: total,
+                currency: 'USD',
+                userId: userId,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                const ordersCollectionRef = collection(db, `/artifacts/${appId}/public/data/orders`);
+                await addDoc(ordersCollectionRef, orderData);
+                
+                showToast("Order submitted successfully!");
+                
+                // Trigger exports
+                handleExportPdf();
+                handleExportExcel();
+
+                // Clear the cart
+                cart = {};
+                await saveCartToFirestore();
+                companyNameInput.value = '';
+
+            } catch (error) {
+                console.error("Error submitting order:", error);
+                showToast("Failed to submit order.");
+            }
+        }
+
+
+        /**
          * Initializes the application.
          */
         async function initCatalogApp() {
@@ -788,9 +832,8 @@
         // --- Event Listeners ---
         viewCartButton.addEventListener('click', toggleCart);
         closeCartButton.addEventListener('click', toggleCart);
-        exportPdfBtn.addEventListener('click', handleExportPdf);
-        exportExcelBtn.addEventListener('click', handleExportExcel);
-        companyNameInput.addEventListener('input', updateExportButtonState);
+        submitOrderBtn.addEventListener('click', handleSubmitOrder);
+        companyNameInput.addEventListener('input', updateSubmitButtonState);
         document.addEventListener('DOMContentLoaded', initCatalogApp);
 
     </script>
