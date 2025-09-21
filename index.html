@@ -217,10 +217,7 @@
         import { getFirestore, doc, setDoc, onSnapshot, setLogLevel, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
-        // IMPORTANT: This should be the link to your Google Sheet with prices in TURKISH LIRA (TRY).
         const googleSheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTemIQAjyMsEqPPUYaNMIn2rwrEbuqR7NrW9vey_mC1iZmIn7FZlOH7g3Co7bZG5B18BJy7Cjldvs53/pub?output=csv';
-
-        // URL for the free exchange rate API
         const exchangeRateApiUrl = 'https://open.er-api.com/v6/latest/TRY';
 
         const brandLogoMap = {
@@ -244,7 +241,6 @@
         const phoneNumberInput = document.getElementById('phone-number');
         const scrollToTopBtn = document.getElementById('scroll-to-top-btn');
 
-
         let catalogData = {};
         let orderedBrands = [];
         let cart = {}; // Local cart state
@@ -259,7 +255,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyDjl2QFyRWoN_SjbRKTuhxp9ksgm-5MBTw", authDomain: "comogluimg.firebaseapp.com", projectId: "comogluimg", storageBucket: "comogluimg.appspot.com", messagingSenderId: "964383861519", appId: "1:964383861519:web:447d607e3c158df951ec7a", measurementId: "G-NK80JQBKXE"
         };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'digital-price-catalog-usd';
+        const appId = 'digital-price-catalog-usd';
 
 
         /**
@@ -267,7 +263,7 @@
          */
         async function initializeFirebase() {
             if (!firebaseConfig.apiKey) {
-                console.error("Firebase config is not available. Please update it with your actual Firebase project credentials."); return;
+                console.error("Firebase config is not available."); return;
             }
             try {
                 const app = initializeApp(firebaseConfig);
@@ -283,7 +279,7 @@
                         listenToCartChanges();
                     } else {
                         console.log("No user found, attempting anonymous sign-in...");
-                        try { await signInAnonymously(auth); } catch (signInError) { console.error("Firebase anonymous sign-in failed:", signInError); }
+                        try { await signInAnonymously(auth); } catch (e) { console.error("Firebase anonymous sign-in failed:", e); }
                     }
                 });
             } catch (error) { console.error("Firebase initialization failed:", error); }
@@ -298,7 +294,7 @@
             unsubscribeCart = onSnapshot(cartDocRef, (doc) => {
                 cart = doc.exists() ? doc.data().items || {} : {};
                 renderCart();
-                if (currentBrand) { displayProducts(currentBrand); }
+                if (currentBrand) { displayProducts(currentBrand, false); } // Don't scroll on background refresh
             }, (error) => { console.error("Error listening to cart changes:", error); });
         }
 
@@ -311,9 +307,7 @@
         }
         
         /**
-         * Parses CSV text into a structured JavaScript object and converts prices.
-         * @param {string} csvText - The raw CSV data from the Google Sheet.
-         * @param {number} conversionRate - The rate to convert TRY to USD.
+         * Parses CSV text into a structured JavaScript object.
          */
         function parseCsvData(csvText, conversionRate = 1) {
             const data = {};
@@ -324,6 +318,7 @@
 
             const brandIndex = lowerCaseHeaders.indexOf('brand');
             const nameIndex = lowerCaseHeaders.indexOf('name');
+            const englishNameIndex = lowerCaseHeaders.indexOf('english');
             const priceIndex = lowerCaseHeaders.indexOf('price');
             const codeIndex = lowerCaseHeaders.indexOf('productcode');
             const imageIndex = lowerCaseHeaders.indexOf('imageurl');
@@ -334,7 +329,6 @@
             for (let i = 1; i < rows.length; i++) {
                 const rowText = rows[i].trim();
                 if (!rowText.includes(',')) continue;
-                
                 const values = rowText.split(',').map(v => v.trim());
                 const brand = values[brandIndex] ? values[brandIndex].trim() : null;
 
@@ -345,20 +339,19 @@
                 let imageUrl = values[imageIndex] || null;
                 if (imageUrl && imageUrl.startsWith('https//')) imageUrl = 'https://' + imageUrl.substring(8);
                 
-                // --- CURRENCY CONVERSION HAPPENS HERE ---
                 const priceInLira = parseFloat(values[priceIndex]) || 0;
                 const koliFiyatInLira = parseFloat(values[koliFiyatIndex]) || 0;
-                
+
                 const productData = {
                     id: values[idIndex] || `prod-${Date.now()}-${i}`,
                     productCode: values[codeIndex] || 'N/A',
                     name: values[nameIndex] || 'Unnamed Product',
-                    price: priceInLira * conversionRate, // Convert piece price to USD
+                    englishName: values[englishNameIndex] || null,
+                    price: priceInLira * conversionRate,
                     imageUrl: imageUrl,
                     koliIciAdet: parseInt(values[koliIciAdetIndex], 10) || 0,
-                    koliFiyat: koliFiyatInLira * conversionRate // Convert case price to USD
+                    koliFiyat: koliFiyatInLira * conversionRate
                 };
-                
                 data[brand].push(productData);
             }
             return data;
@@ -366,29 +359,37 @@
         
         /**
          * Renders the product grid for a selected brand.
+         * @param {string} brand - The brand name to display.
+         * @param {boolean} shouldScroll - Whether to scroll to the top of the section.
          */
-        function displayProducts(brand) {
+        function displayProducts(brand, shouldScroll = true) {
             currentBrand = brand;
             if (!catalogData[brand] || catalogData[brand].length === 0) {
                 console.warn(`Brand "${brand}" not found or has no products.`);
                 productGrid.innerHTML = `<p class="text-center col-span-full">No products found for this brand.</p>`; return;
             }
+            
             const brandLogoUrl = brandLogoMap[brand] || "https://placehold.co/100x100/FFFFFF/CCCCCC?text=Logo";
             brandTitleContainer.innerHTML = `
                 <span class="w-3 h-10 brand-title-accent rounded-full"></span>
                 <img src="${brandLogoUrl}" alt="${brand} Logo" class="h-10 w-auto object-contain">
                 <h2 class="text-3xl font-bold text-slate-800">${brand}</h2>`;
+            
+            if (shouldScroll) {
+                brandNavContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
             productGrid.innerHTML = '';
             document.querySelectorAll('#brand-nav-buttons button').forEach(button => {
                 const isActive = button.dataset.brand === brand;
                 button.className = `px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center gap-2 ${isActive ? 'brand-button-active shadow-lg' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`;
             });
+
             const products = catalogData[brand] || [];
             products.forEach((product, index) => {
                 const card = document.createElement('div');
                 card.className = "product-card-animate bg-white rounded-2xl shadow-lg overflow-hidden group transition-shadow duration-300 hover:shadow-xl flex flex-col";
                 card.style.animationDelay = `${index * 50}ms`;
-
                 const placeholderUrl = `https://placehold.co/400x400/EEE/31343C?text=${encodeURIComponent(product.name.split(' ')[0])}`;
                 const imageUrl = product.imageUrl || placeholderUrl;
                 const quantity = cart[product.id]?.quantity || 0;
@@ -416,39 +417,46 @@
                            <div class="quantity-control-container">${quantityControlsHTML}</div>
                        </div>`
                     : `<div class="space-y-4">
-                           <p class="text-xl font-extrabold text-slate-900">
-                               $${product.price.toFixed(2)} 
-                               <span class="text-sm text-slate-500 font-medium align-baseline">/ piece</span>
-                           </p>
+                           <p class="text-xl font-extrabold text-slate-900">$${product.price.toFixed(2)} <span class="text-sm text-slate-500 font-medium align-baseline">/ piece</span></p>
                            <div class="quantity-control-container">${quantityControlsHTML}</div>
                        </div>`;
-
+                
                 card.innerHTML = `
                     <div class="relative h-56">
                         <img src="${imageUrl}" alt="${product.name}" class="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-110" loading="lazy" onError="this.onerror=null; this.src='${placeholderUrl}';"/>
                     </div>
                     <div class="p-5 flex flex-col flex-grow">
-                        <div class="flex-grow"><h3 class="text-lg font-bold text-slate-800 mb-2">${product.name}</h3></div>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-slate-800 mb-1">${product.name}</h3>
+                            ${product.englishName ? `<p class="text-sm text-slate-500 mb-2">${product.englishName}</p>` : ''}
+                        </div>
                         <div class="mt-4 pt-4 border-t">${pricingAndControlsHTML}</div>
                     </div>`;
                 productGrid.appendChild(card);
             });
             productGrid.querySelectorAll('.add-to-cart-btn, .increment-btn').forEach(btn => {
-                btn.onclick = () => { const product = findProductById(btn.dataset.productId); if (product) addToCart(product); };
+                btn.onclick = () => { const p = findProductById(btn.dataset.productId); if (p) addToCart(p); };
             });
             productGrid.querySelectorAll('.decrement-btn').forEach(btn => {
-                btn.onclick = () => { const product = findProductById(btn.dataset.productId); if (product) decrementFromCart(product); };
+                btn.onclick = () => { const p = findProductById(btn.dataset.productId); if (p) decrementFromCart(p); };
             });
         }
         
         function findProductById(productId) {
-            for (const brand in catalogData) { const product = catalogData[brand].find(p => p.id === productId); if (product) return product; } return null;
+            for (const b in catalogData) { const p = catalogData[b].find(p => p.id === productId); if (p) return p; } return null;
         }
+
         function addToCart(product) {
-            const { id, name, price, koliFiyat } = product;
-            if (cart[id]) { cart[id].quantity++; } else { cart[id] = { name, price, koliFiyat, quantity: 1 }; showToast("Item added to cart!"); }
+            const { id, name, englishName, price, koliFiyat } = product;
+            if (cart[id]) { 
+                cart[id].quantity++; 
+            } else { 
+                cart[id] = { name, englishName, price, koliFiyat, quantity: 1 };
+                showToast("Item added to cart!"); 
+            }
             saveCartToFirestore();
         }
+
         function decrementFromCart(product) {
             const { id } = product;
             if (cart[id]) { if (cart[id].quantity > 1) { cart[id].quantity--; } else { delete cart[id]; } saveCartToFirestore(); }
@@ -463,34 +471,31 @@
             submitOrderBtn.disabled = !(!isCartEmpty && companyName !== '' && phoneNumber !== '');
         }
         function renderCart() {
-            if (Object.keys(cart).length === 0) {
-                cartItemsContainer.innerHTML = `<p class="text-slate-500 text-center mt-8">Your cart is empty.</p>`;
-            } else {
-                cartItemsContainer.innerHTML = '';
-                Object.entries(cart).forEach(([id, item]) => {
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'flex justify-between items-center mb-4';
+            cartItemsContainer.innerHTML = Object.keys(cart).length === 0
+                ? `<p class="text-slate-500 text-center mt-8">Your cart is empty.</p>`
+                : Object.entries(cart).map(([id, item]) => {
                     const priceToShow = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price;
-                    itemEl.innerHTML = `
-                        <div class="flex-grow">
-                            <p class="font-semibold">${item.name}</p>
-                            <p class="text-sm text-slate-500">$${priceToShow.toFixed(2)}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="number" min="1" value="${item.quantity}" data-id="${id}" class="quantity-input w-16 border rounded-md p-1 text-center">
-                            <button data-id="${id}" class="remove-item-btn text-red-500 hover:text-red-700 text-2xl">&times;</button>
-                        </div>`;
-                    cartItemsContainer.appendChild(itemEl);
-                });
-            }
-            cartItemsContainer.querySelectorAll('.quantity-input').forEach(input => { input.onchange = (e) => updateCartQuantity(e.target.dataset.id, parseInt(e.target.value, 10)); });
-            cartItemsContainer.querySelectorAll('.remove-item-btn').forEach(btn => { btn.onclick = (e) => updateCartQuantity(e.target.dataset.id, 0); });
+                    return `<div class="flex justify-between items-center mb-4">
+                                <div class="flex-grow">
+                                    <p class="font-semibold">${item.name}</p>
+                                    ${item.englishName ? `<p class="text-xs text-slate-500">${item.englishName}</p>` : ''}
+                                    <p class="text-sm text-slate-500 mt-1">$${priceToShow.toFixed(2)}</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" min="1" value="${item.quantity}" data-id="${id}" class="quantity-input w-16 border rounded-md p-1 text-center">
+                                    <button data-id="${id}" class="remove-item-btn text-red-500 hover:text-red-700 text-2xl">&times;</button>
+                                </div>
+                            </div>`;
+                }).join('');
+            
+            cartItemsContainer.querySelectorAll('.quantity-input').forEach(i => { i.onchange = (e) => updateCartQuantity(e.target.dataset.id, parseInt(e.target.value, 10)); });
+            cartItemsContainer.querySelectorAll('.remove-item-btn').forEach(b => { b.onclick = (e) => updateCartQuantity(e.target.dataset.id, 0); });
             updateCartSummary();
             updateSubmitButtonState();
         }
         function updateCartSummary() {
-            const total = Object.values(cart).reduce((sum, item) => { const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; return sum + (priceToUse * item.quantity); }, 0);
-            const itemCount = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
+            const total = Object.values(cart).reduce((s, item) => s + ((item.koliFiyat && item.koliFiyat > 0 ? item.koliFiyat : item.price) * item.quantity), 0);
+            const itemCount = Object.values(cart).reduce((s, item) => s + item.quantity, 0);
             cartTotalEl.textContent = `$${total.toFixed(2)}`;
             cartItemCountEl.textContent = itemCount;
             cartItemCountEl.classList.toggle('hidden', itemCount === 0);
@@ -501,42 +506,50 @@
             setTimeout(() => { toastEl.classList.add('opacity-0', 'translate-y-3'); }, 2000);
         }
         function toggleCart() { cartContainer.classList.toggle('cart-hidden'); }
-
+        
         function handleExportPdf() {
             const companyName = companyNameInput.value.trim();
             const fullPhoneNumber = countryCodeInput.value + phoneNumberInput.value.trim();
             const { jsPDF } = window.jspdf; const doc = new jsPDF();
             doc.setFontSize(18); doc.text("Order Summary", 14, 22);
             doc.setFontSize(11); doc.setTextColor(100);
-            doc.text(`Company: ${companyName}`, 14, 30);
-            doc.text(`Phone: ${fullPhoneNumber}`, 14, 38);
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 46);
-            const headers = [["Product Name", "Quantity", "Unit Price ($)", "Total ($)"]];
-            const data = Object.values(cart).map(item => { const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; return [ item.name, item.quantity, priceToUse.toFixed(2), (priceToUse * item.quantity).toFixed(2) ] });
+            doc.text(`Company: ${companyName}`, 14, 30); doc.text(`Phone: ${fullPhoneNumber}`, 14, 38); doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 46);
+            const headers = [["Product Name", "English Name", "Quantity", "Unit Price ($)", "Total ($)"]];
+            const data = Object.values(cart).map(item => { 
+                const p = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; 
+                return [ item.name, item.englishName || '', item.quantity, p.toFixed(2), (p * item.quantity).toFixed(2) ] 
+            });
             doc.autoTable({ startY: 55, head: headers, body: data, theme: 'striped', headStyles: { fillColor: [41, 128, 185] } });
             const finalY = doc.autoTable.previous.finalY;
-            const total = Object.values(cart).reduce((sum, item) => { const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; return sum + (priceToUse * item.quantity); }, 0);
+            const total = Object.values(cart).reduce((s, i) => s + ((i.koliFiyat && i.koliFiyat > 0 ? i.koliFiyat : i.price) * i.quantity), 0);
             doc.setFontSize(14); doc.text(`Grand Total: $${total.toFixed(2)}`, 14, finalY + 15);
             doc.save(`order_${companyName.replace(/\s+/g, '_')}.pdf`);
         }
+
         function handleExportExcel() {
             const companyName = companyNameInput.value.trim();
             const fullPhoneNumber = countryCodeInput.value + phoneNumberInput.value.trim();
-            const worksheetData = [ ["Company Name:", companyName], ["Phone Number:", fullPhoneNumber], [], ["Product Name", "Quantity", "Unit Price ($)", "Total ($)"] ];
+            const worksheetData = [ ["Company Name:", companyName], ["Phone Number:", fullPhoneNumber], [], ["Product Name", "English Name", "Quantity", "Unit Price ($)", "Total ($)"] ];
             let total = 0;
-            Object.values(cart).forEach(item => { const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; const itemTotal = priceToUse * item.quantity; total += itemTotal; worksheetData.push([ item.name, item.quantity, priceToUse, itemTotal ]); });
-            worksheetData.push([]); worksheetData.push(["", "", "Grand Total:", total]);
+            Object.values(cart).forEach(item => { 
+                const p = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; 
+                const iTotal = p * item.quantity; 
+                total += iTotal; 
+                worksheetData.push([ item.name, item.englishName || '', item.quantity, p, iTotal ]); 
+            });
+            worksheetData.push([], ["", "", "", "Grand Total:", total]);
             const ws = XLSX.utils.aoa_to_sheet(worksheetData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Cart");
             XLSX.writeFile(wb, `order_${companyName.replace(/\s+/g, '_')}.xlsx`);
         }
+
         async function handleSubmitOrder() {
             const companyName = companyNameInput.value.trim();
             const phoneNumber = phoneNumberInput.value.trim();
             if (!companyName || !phoneNumber) { showToast("Please fill in all required fields."); return; }
             const fullPhoneNumber = countryCodeInput.value + phoneNumber;
-            const total = Object.values(cart).reduce((sum, item) => { const priceToUse = (item.koliFiyat && item.koliFiyat > 0) ? item.koliFiyat : item.price; return sum + (priceToUse * item.quantity); }, 0);
+            const total = Object.values(cart).reduce((s, i) => s + ((i.koliFiyat && i.koliFiyat > 0 ? i.koliFiyat : i.price) * i.quantity), 0);
             const orderData = { companyName, phoneNumber: fullPhoneNumber, cart, total, currency: 'USD', userId, createdAt: serverTimestamp() };
             try {
                 const ordersCollectionRef = collection(db, `/artifacts/${appId}/public/data/orders`);
@@ -547,26 +560,19 @@
                 companyNameInput.value = ''; phoneNumberInput.value = '';
             } catch (error) { console.error("Error submitting order:", error); showToast("Failed to submit order."); }
         }
-
-        /**
-         * Initializes the application, fetching rates and product data.
-         */
+        
         async function initCatalogApp() {
             await initializeFirebase();
             try {
-                // --- Step 1: Fetch the latest TRY to USD exchange rate ---
                 const rateResponse = await fetch(exchangeRateApiUrl);
                 if (!rateResponse.ok) throw new Error('Could not fetch exchange rate.');
                 const rateData = await rateResponse.json();
                 const tryToUsdRate = rateData.rates.USD;
                 console.log(`Successfully fetched TRY to USD rate: ${tryToUsdRate}`);
 
-                // --- Step 2: Fetch the product data from Google Sheet ---
                 const response = await fetch(googleSheetCsvUrl);
-                if (!response.ok) throw new Error(`Network response was not ok (status: ${response.status}). Check if the sheet is published correctly.`);
+                if (!response.ok) throw new Error(`Network response was not ok (status: ${response.status}).`);
                 const csvText = await response.text();
-                
-                // --- Step 3: Parse CSV data, applying the fetched conversion rate ---
                 catalogData = parseCsvData(csvText, tryToUsdRate);
                 
                 brandNavContainer.innerHTML = '';
@@ -580,19 +586,15 @@
                         button.onclick = () => displayProducts(brand);
                         brandNavContainer.appendChild(button);
                     });
-                    displayProducts(orderedBrands[0]);
+                    displayProducts(orderedBrands[0], false); // Don't scroll on initial load
                 } else {
                     brandTitleContainer.innerHTML = `<h2 class="text-3xl font-bold text-slate-800">No products found.</h2>`;
-                    productGrid.innerHTML = `<p class="text-center col-span-full text-slate-500">The catalog is currently empty. Please add products to the Google Sheet.</p>`;
+                    productGrid.innerHTML = `<p class="text-center col-span-full text-slate-500">The catalog is empty.</p>`;
                 }
-
             } catch (error) {
                 console.error('Failed to initialize app:', error);
                 brandTitleContainer.innerHTML = `<h2 class="text-3xl font-bold text-red-600">Error Loading Products</h2>`;
-                productGrid.innerHTML = `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 col-span-full rounded-r-lg" role="alert">
-                                                 <p class="font-bold">Failed to load data</p>
-                                                 <p>${error.message}</p>
-                                               </div>`;
+                productGrid.innerHTML = `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert"><p>${error.message}</p></div>`;
             }
         }
         
@@ -620,4 +622,3 @@
     </script>
 </body>
 </html>
-
